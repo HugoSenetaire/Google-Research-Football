@@ -100,10 +100,10 @@ def raw_data_to_target(episode_data, start_frame, measurement_names, future_time
 
 
 def create_optimizer(dfp_agent,args):
-  if args.optimizer == "Adam":
-    optimizer = optim.Adam(dfp_agent.model.parameters(), lr = args.lr)
-  elif args.optimizer == "SGD":
-    optimizer = optim.SGD(dfp_agent.model.parameters(), lr=args.lr, momentum=args.momentum)
+  if args["optimizer"] == "Adam":
+    optimizer = optim.Adam(dfp_agent.model.parameters(), lr = args["lr"])
+  elif args["optimizer"] == "SGD":
+    optimizer = optim.SGD(dfp_agent.model.parameters(), lr=args["lr"], momentum=args["momentum"])
   else :
     raise NotImplementedError
   return optimizer

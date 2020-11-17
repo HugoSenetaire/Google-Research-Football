@@ -45,8 +45,8 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
     action_op = agent(observation[1]['observation'])
 
     frame_data = observation[0]["observation"]["players_raw"][0]
-    sensory = utils.frame_data_to_tensor(frame_data, args.CHANNEL_NAMES, args.IMAGE_SIZE)
-    measurements = utils.frame_data_to_measurements(observation[0], args.MEASUREMENT_NAMES)
+    sensory = utils.frame_data_to_tensor(frame_data, args["CHANNEL_NAMES"], args["IMAGE_SIZE"])
+    measurements = utils.frame_data_to_measurements(observation[0], args["MEASUREMENT_NAMES"])
 
     if use_cuda:
         sensory, measurements, goal = sensory.cuda(), measurements.cuda(), goal.cuda()
