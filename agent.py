@@ -1,15 +1,15 @@
 from collections import deque
 import random
 import matplotlib.pyplot as plt
-
+from model import *
 #Taken from https://github.com/flyyufelix/Direct-Future-Prediction-Keras/blob/master/dfp.py
 
 
 from kaggle_environments.envs.football.helpers import *
 
 @human_readable_agent
-class NaiveAgent():
-    def __init__():
+class RandomAgent():
+    def __init__(self):
         print("Random agent")
 
 

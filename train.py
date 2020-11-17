@@ -18,7 +18,7 @@ def train_on_batch(model, state_input, measurement_input, goal_input, f_target, 
 
 
 
-def train(dfp_agent, env, optimizer, args, list_opposition = [agent.naive_agent()]):
+def train(dfp_agent, env, optimizer, args, list_opposition):
   agent = list_opposition[0]
   observation = env.reset()
   done=False
