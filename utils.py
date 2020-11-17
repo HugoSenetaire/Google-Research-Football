@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-
+from torch import optim
 
 TOP_LEFT_CORNER_COORDS = (-1.1, -0.45)
 
@@ -107,3 +107,14 @@ def create_optimizer(dfp_agent,args):
   else :
     raise NotImplementedError
   return optimizer
+
+
+
+def create_goal(rel_goal, timesteps_size):
+  """
+  Create goal with given relative importance of measurements for the LAST timestep to predict (like in the paper)
+  """
+  goal = torch.zeros((timesteps_size, len(rel_goal)), dtype=torch.float)
+  goal[-1]=torch.tensor(rel_goal)
+  goal = goal.flatten()
+  return goal

@@ -2,43 +2,46 @@ from collections import deque
 import random
 import matplotlib.pyplot as plt
 from model import *
+import numpy as np
+
 #Taken from https://github.com/flyyufelix/Direct-Future-Prediction-Keras/blob/master/dfp.py
 
 
 from kaggle_environments.envs.football.helpers import *
 
-
 class RandomAgent():
-    def __init__(self):
-        print("Random agent")
+  def __init__(self):
+      print("Random agent")
 
 
-    def get_action(obs):
-        # Make sure player is running.
-        if Action.Sprint not in obs['sticky_actions']:
-            return Action.Sprint
-        # We always control left team (observations and actions
-        # are mirrored appropriately by the environment).
-        controlled_player_pos = obs['left_team'][obs['active']]
-        # Does the player we control have the ball?
-        if obs['ball_owned_player'] == obs['active'] and obs['ball_owned_team'] == 0:
-            # Shot if we are 'close' to the goal (based on 'x' coordinate).
-            if controlled_player_pos[0] > 0.5:
-                return Action.Shot
-            # Run towards the goal otherwise.
-            return Action.Right
-        else:
-            # Run towards the ball.
-            if obs['ball'][0] > controlled_player_pos[0] + 0.05:
-                return Action.Right
-            if obs['ball'][0] < controlled_player_pos[0] - 0.05:
-                return Action.Left
-            if obs['ball'][1] > controlled_player_pos[1] + 0.05:
-                return Action.Bottom
-            if obs['ball'][1] < controlled_player_pos[1] - 0.05:
-                return Action.Top
-            # Try to take over the ball if close to the ball.
-            return Action.Slide
+  def get_action(self, obs):
+
+    return [random.randint(0,18)]
+      # # Make sure player is running.
+      # if Action.Sprint not in obs['sticky_actions']:
+      #     return Action.Sprint
+      # # We always control left team (observations and actions
+      # # are mirrored appropriately by the environment).
+      # controlled_player_pos = obs['left_team'][obs['active']]
+      # # Does the player we control have the ball?
+      # if obs['ball_owned_player'] == obs['active'] and obs['ball_owned_team'] == 0:
+      #     # Shot if we are 'close' to the goal (based on 'x' coordinate).
+      #     if controlled_player_pos[0] > 0.5:
+      #         return Action.Shot
+      #     # Run towards the goal otherwise.
+      #     return Action.Right
+      # else:
+      #     # Run towards the ball.
+      #     if obs['ball'][0] > controlled_player_pos[0] + 0.05:
+      #         return Action.Right
+      #     if obs['ball'][0] < controlled_player_pos[0] - 0.05:
+      #         return Action.Left
+      #     if obs['ball'][1] > controlled_player_pos[1] + 0.05:
+      #         return Action.Bottom
+      #     if obs['ball'][1] < controlled_player_pos[1] - 0.05:
+      #         return Action.Top
+      #     # Try to take over the ball if close to the ball.
+      #     return Action.Slide
 
 
 class DFPAgent():
@@ -49,6 +52,7 @@ class DFPAgent():
       self.measurement_size = len(measurement_names)
       self.action_size = action_size
       self.timesteps = timesteps
+      self.use_cuda = use_cuda
 
       # these is hyper parameters for the DFP
       self.epsilon = 1.0
@@ -86,7 +90,7 @@ class DFPAgent():
         return action_idx
     
     # Save trajectory sample <s,a,r,s'> to the replay memory
-    def replay_memory(self, s_t, action_idx, r_t, s_t1, m_t, is_terminated):
+    def replay_memory(self, t, s_t, action_idx, r_t, s_t1, m_t, is_terminated):
         self.memory.append((s_t, action_idx, r_t, s_t1, m_t, is_terminated))
         if self.epsilon > self.final_epsilon and t > self.observe:
             self.epsilon -= (self.initial_epsilon - self.final_epsilon) / self.explore
@@ -140,9 +144,24 @@ class DFPAgent():
         for i in range(self.batch_size):
             f_target[i, action[i]] = f_action_target[i]
           
-        loss = train_on_batch(self.model, optimizer, state_input, measurement_input, goal_input, f_target)
-
+        loss = self.train_on_batch(optimizer, state_input, measurement_input, goal_input, f_target)
         return loss
+
+
+    def train_on_batch(self, optimizer, state_input, measurement_input, goal_input, f_target, verbose=False):
+        self.model.train()
+        if self.use_cuda:
+          state_input, measurement_input, goal_input, f_target = state_input.cuda(), measurement_input.cuda(), goal_input.cuda(), f_target.cuda()
+        optimizer.zero_grad()
+        output = self.model(state_input, measurement_input, goal_input)
+        criterion = torch.nn.MSELoss(reduction="sum")
+        loss = criterion(output, f_target)
+        loss.backward()
+        optimizer.step()
+        if torch.isnan(output-f_target).any():
+          raise Exception("Naan cheeese alert!")
+        return loss
+
     
     # load the saved model
     def save_model(self, path = "/content/drive/My Drive/google-football/weights.pth"):

@@ -31,7 +31,8 @@ def update_default_args(args):
         "observe" : 2000,
         "frame_per_action" : 4,
         "timestep_per_train" : 5,
-        "max_memory" : 20000
+        "max_memory" : 20000,
+        "NUM_STEPS" : 200
     })
 
 

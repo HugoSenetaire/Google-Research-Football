@@ -1,20 +1,8 @@
 import agentLocal
 import model
 import utils
+import numpy as np
 
-def train_on_batch(model, state_input, measurement_input, goal_input, f_target, verbose=False):
-    model.train()
-    if use_cuda:
-      state_input, measurement_input, goal_input, f_target = state_input.cuda(), measurement_input.cuda(), goal_input.cuda(), f_target.cuda()
-    optimizer.zero_grad()
-    output = model(state_input, measurement_input, goal_input)
-    criterion = torch.nn.MSELoss(reduction="sum")
-    loss = criterion(output, f_target)
-    loss.backward()
-    optimizer.step()
-    if torch.isnan(output-f_target).any():
-      raise Exception("Naan cheeese alert!")
-    return loss
 
 
 
@@ -30,7 +18,7 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
   # Buffer to compute rolling statistics 
   score_buffer = []
   r_t = 0
-  goal = create_goal([10,0.2,0.1,2], len(TIMESTEPS))
+  goal = utils.create_goal([10,0.2,0.1,2], len(args["TIMESTEPS"]))
   loss = 0
   loss_queue_size = 50
   loss_queue = []
@@ -40,15 +28,18 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
 
   ## Training loop
   while t<dfp_agent.explore + dfp_agent.observe:
+    # print("joueur1")
+    # print(observation[0])
+    # print("joueur2")
+    # print(observation[1])
 
-
-    action_op = agent(observation[1]['observation'])
+    action_op = agent.get_action(observation[1]['observation'])
 
     frame_data = observation[0]["observation"]["players_raw"][0]
     sensory = utils.frame_data_to_tensor(frame_data, args["CHANNEL_NAMES"], args["IMAGE_SIZE"])
     measurements = utils.frame_data_to_measurements(observation[0], args["MEASUREMENT_NAMES"])
 
-    if use_cuda:
+    if args["use_cuda"]:
         sensory, measurements, goal = sensory.cuda(), measurements.cuda(), goal.cuda()
       
 
@@ -60,10 +51,14 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
       print(e)
       done=True
 
+    # print("joueur1")
+    # print(observation[0])
+    # print("joueur2")
+    # print(observation[1])
 
     ## TODO: Add frame skip between each memory ?
     is_terminated = observation[0]['status'] == "DONE"
-
+    # break
     r_t = observation[0]['reward']
     score=r_t
 
@@ -72,15 +67,15 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
             max_score = score
         GAME += 1
         score_buffer.append(score)
-        # print ("Episode Finish ")
+        print ("Episode Finish ")
         observation = env.reset()
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
-    dfp_agent.replay_memory(sensory, action_dfp, r_t, None, measurements, is_terminated)
+    dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
 
     # Do the training
     if t > dfp_agent.observe and t % dfp_agent.timestep_per_train == 0:
-        loss = dfp_agent.train_minibatch_replay(goal).cpu().item()
+        loss = dfp_agent.train_minibatch_replay(goal, optimizer).cpu().item()
         if len(loss_queue)==loss_queue_size :
           loss_queue.pop(0)
         loss_queue.append(loss)
