@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import utils
 import train
-from agent import DFPAgent, RandomAgent
+from agentLocal import DFPAgent, RandomAgent
 from default_parameters import *
 
 if __name__ == '__main__':
