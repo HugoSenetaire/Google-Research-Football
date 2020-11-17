@@ -7,7 +7,7 @@ from model import *
 
 from kaggle_environments.envs.football.helpers import *
 
-@human_readable_agent
+
 class RandomAgent():
     def __init__(self):
         print("Random agent")
