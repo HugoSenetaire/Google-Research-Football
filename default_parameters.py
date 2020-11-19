@@ -73,17 +73,17 @@ def update_default_args(args):
         "epsilon" : 1.0,
         "initial_epsilon" : 1.0,
         "final_epsilon": 0.0001,
-        "batch_size" : 32,
-        "explore" : 100000,
+        "batch_size" : 64,
+        "explore" : 10000000,
         "observe" : 2000,
-        "frame_per_action" : 4,
-        "timestep_per_train" : 5,
+        "frame_per_action" : 1, # TODO : USELESS ?
+        "timestep_per_train" : 64,
         "max_memory" : 20000,
 
     })
 
 
-    args["total_train"] = 2000000
+    args["total_train"] = 11000000
     assert(args["total_train"]>=args["explore"]+args["observe"])
 
     #Optimizer update :
