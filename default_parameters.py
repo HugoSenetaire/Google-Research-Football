@@ -7,7 +7,7 @@ import os
 def create_args():
     parser = argparse.ArgumentParser(description='DFP exp')
     parser.add_argument('--gpu', action='store_true', help='Whether to use GPU')
-    parser.add_argument('--experiment_name', type=str, default = "None")
+    parser.add_argument('--experiment_name', type=str)
     parser.add_argument('--global_path', type=str)
     parser.add_argument('--load_model', action='store_true')
     parser.add_argument('--t', type = int, default=0) # when -1, use the last weights saved
@@ -24,7 +24,7 @@ def get_total_path(args):
         else:
             args["global_path"] = "experiments/"
     
-    if args["experiment_name"]=="None" :
+    if args["experiment_name"] is None :
         currentdate = str(datetime.datetime.now())
         args["experiment_name"] = args["SCENARIO"] + "_" + currentdate  
         
