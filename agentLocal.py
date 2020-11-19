@@ -45,7 +45,7 @@ class RandomAgent():
 
 
 class DFPAgent():
-    def __init__(self, state_size, measurement_names, action_size, timesteps, args, use_cuda=False):
+    def __init__(self, use_cuda=False):
       self.state_size = len(args["CHANNEL_NAMES"]),)+args["IMAGE_SIZE"]
       self.measurement_names = args["MEASUREMENT_NAMES"]
       self.action_size = args["NB_ACTIONS"]
