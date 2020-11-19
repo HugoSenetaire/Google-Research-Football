@@ -45,28 +45,27 @@ class RandomAgent():
 
 
 class DFPAgent():
-    def __init__(self, state_size, measurement_names, action_size, timesteps, use_cuda=False):
-      self.measurement_names = measurement_names
-      # get size of state, measurement, action, and timestep
-      self.state_size = state_size #sensory input size
+    def __init__(self, state_size, measurement_names, action_size, timesteps, args, use_cuda=False):
+      self.state_size = len(args["CHANNEL_NAMES"]),)+args["IMAGE_SIZE"]
+      self.measurement_names = args["MEASUREMENT_NAMES"]
+      self.action_size = args["NB_ACTIONS"]
+      self.timesteps = args["TIMESTEPS"]
       self.measurement_size = len(measurement_names)
-      self.action_size = action_size
-      self.timesteps = timesteps
       self.use_cuda = use_cuda
 
       # these is hyper parameters for the DFP
-      self.epsilon = 1.0
-      self.initial_epsilon = 1.0
-      self.final_epsilon = 0.0001
-      self.batch_size = 32
-      self.observe = 2000
-      self.explore = 50000 
-      self.frame_per_action = 4
-      self.timestep_per_train = 5 # Number of timesteps between training interval
+      self.epsilon = args["epsilon"]
+      self.initial_epsilon = args["initial_epsilon"]
+      self.final_epsilon = args["final_epsilon"]
+      self.batch_size = args["batch_size"]
+      self.observe = args["observe"]
+      self.explore = args["explore"] 
+      self.frame_per_action = args["frame_per_action"]
+      self.timestep_per_train = args["timestep_per_train"] # Number of timesteps between training interval
 
       # experience replay buffer
       self.memory = deque()
-      self.max_memory = 20000
+      self.max_memory = args["max_memory"]
 
       # create model
       self.model = DFPBasicModel(self.state_size, self.measurement_size, len(self.timesteps), self.action_size)

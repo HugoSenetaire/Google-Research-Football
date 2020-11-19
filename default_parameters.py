@@ -36,12 +36,16 @@ def update_default_args(args):
         "TIMESTEPS" : [1,2,4,8,16,32],
         "IMAGE_SIZE" : (43, 101),
         "NB_ACTIONS" : 19,
+        "NUM_STEPS" : 200
     })
 
         # Save update
-    if args["GLOBAL_PATH"] == ".":
+
+    args["save_every"] = 5000
+
+    if args["GLOBAL_PATH"] == "experiments/":
         if args["running_in_notebook"]:
-            ["GLOBAL_PATH"] =  "/content/drive/My Drive/google-football/"
+            args["GLOBAL_PATH"] =  "/content/drive/My Drive/google-football/"
     
     if args["experiment_name"]=="None" :
         currentdate = str(datetime.datetime.now())
@@ -60,15 +64,19 @@ def update_default_args(args):
         "gamma" : 0.99,
         "epsilon" : 1.0,
         "initial_epsilon" : 1.0,
+        "final_epsilon": 0.0001,
         "batch_size" : 32,
         "explore" : 100000,
         "observe" : 2000,
         "frame_per_action" : 4,
         "timestep_per_train" : 5,
         "max_memory" : 20000,
-        "NUM_STEPS" : 200
+
     })
 
+
+    args["total_train"] = 2000000
+    assert(args["total_train"]>=args["explore"]+args["observe"])
 
     #Optimizer update :
     args.update({

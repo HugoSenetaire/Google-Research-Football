@@ -7,6 +7,8 @@ from agentLocal import DFPAgent, RandomAgent
 from default_parameters import *
 from kaggle_environments import make
 import json
+import pickle
+
 
 if __name__ == '__main__':
     args = create_args()
@@ -14,17 +16,20 @@ if __name__ == '__main__':
     if args["load_model"]:
         print("Load parameter from {}".format(os.path.join(args["TOTAL_PATH"],'argument.json')))
         t = args["t"]
-        with open(os.path.join(args["TOTAL_PATH"],'argument.json'),r) as fp:
-              args.update(json.loads(fp))
-              args["t"] = t
+        with open(os.path.join(args["TOTAL_PATH"],'argument.pkl'), 'rb') as handle:
+            args.update(pickle.load(handle))
+            args["t"] = t
+            args["load_model"] = True
     else :
         with open(os.path.join(args["TOTAL_PATH"],'argument.json'), 'w') as fp:
             json.dump(args, fp)
+        with open(os.path.join(args["TOTAL_PATH"],'argument.pkl'), 'wb') as handle:
+            pickle.dump(args, handle, protocol=pickle.HIGHEST_PROTOCOL)
     use_cuda = (torch.cuda.is_available() and args["gpu"])
 
 
 
-    dfp_agent = DFPAgent((len(args["CHANNEL_NAMES"]),)+args["IMAGE_SIZE"], args["MEASUREMENT_NAMES"], args["NB_ACTIONS"], args["TIMESTEPS"], use_cuda=use_cuda)
+    dfp_agent = DFPAgent(args, use_cuda=use_cuda)
     oppositionAgent = RandomAgent()
     
     optimizer = utils.create_optimizer(dfp_agent, args)
@@ -36,12 +41,11 @@ if __name__ == '__main__':
     if args["load_model"]:
         if args["t"]==0 :
             utils.find_last_iteration(args)
-
         else :
             if not utils.check_weights(args):
                 raise NameError("Iteration wanted do not exist")
         print("Load iteration {}".format(args["t"]))
-        utils.load_model(dfp_agent, optimizer, scheduler, t, path)
+        utils.load_model(dfp_agent, optimizer, scheduler, args)
 
     env = make("football", configuration={"save_video": args["SAVE_VIDEO"], "scenario_name": args["SCENARIO"], "running_in_notebook": args["running_in_notebook"], "episodeSteps": args["NUM_STEPS"]}, debug=args["DEBUG"])
     train(dfp_agent, env, optimizer, scheduler, args, list_opposition = [oppositionAgent])

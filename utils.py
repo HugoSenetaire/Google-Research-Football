@@ -146,27 +146,30 @@ def save_model(t, optimizer, scheduler, dfp_agent, path):
 
 
 def check_weights(args):
-  total_path = args["total_path"]
+  total_path = args["TOTAL_PATH"]
   if not os.path.exists(os.path.join(total_path, "weights_{}.pth".format(args["t"]))):
     return False
   else : 
     return True
   
 def find_last_iteration(args):
-  total_path = args["total_path"]
-  list_trained = glob.glob(os.path.join(total_path),"*.pth")
-  if not os.path.exists or len(list_train) == 0 :
+  total_path = args["TOTAL_PATH"]
+  list_trained = glob.glob(os.path.join(total_path,"*.pth"))
+  if not os.path.exists or len(list_trained) == 0 :
     raise NameError("No experiments previously trained at this path")
-  list_t = map(lambda x: int(x.strip(os.path.join(total_path, "weights_").strip(".pth"))) # TODO : Changer ce monstre
+  list_t = list(map(lambda x: int(x.strip(os.path.join(total_path, "weights_")).strip(".pth")),list_trained)) # TODO : Changer ce monstre
   list_t.sort()
   args["t"] = list_t[-1]
 
 
-def load_model(dfp_agent, optimizer, scheduler, t, path):
+
+def load_model(dfp_agent, optimizer, scheduler, args):
+  t = args["t"]
+  path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
   checkpoint = torch.load(path)
   dfp_agent.model.load_state_dict(checkpoint['model_state_dict'])
   dfp_agent.epsilon -= t * (dfp_agent.initial_epsilon - dfp_agent.final_epsilon) / dfp_agent.explore
   optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
   if scheduler is not None :
     scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-  t = checkpoint['t']
+
