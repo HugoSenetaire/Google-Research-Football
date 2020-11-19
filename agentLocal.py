@@ -46,12 +46,13 @@ class RandomAgent():
 
 class DFPAgent():
     def __init__(self, use_cuda=False):
-      self.state_size = len(args["CHANNEL_NAMES"]),)+args["IMAGE_SIZE"]
+      self.state_size = (len(args["CHANNEL_NAMES"]),)+args["IMAGE_SIZE"]
       self.measurement_names = args["MEASUREMENT_NAMES"]
       self.action_size = args["NB_ACTIONS"]
       self.timesteps = args["TIMESTEPS"]
-      self.measurement_size = len(measurement_names)
+      self.measurement_size = len(self.measurement_names)
       self.use_cuda = use_cuda
+
 
       # these is hyper parameters for the DFP
       self.epsilon = args["epsilon"]

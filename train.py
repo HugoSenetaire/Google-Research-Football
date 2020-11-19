@@ -80,8 +80,9 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
 
     # save progress every args["save_every"] iterations
     if t_observe>dfp_agent.observe and t>args["t"] and t % args["save_every"] == 0:
-        print(f"Model saved with iteration {t} at path {os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))}")
-        utils.save_model(t, optimizer, scheduler, dfp_agent, os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t)))
+        path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
+        print(f"Model saved with iteration {t} at path {path}")
+        utils.save_model(t, optimizer, scheduler, dfp_agent, path)
         # torch.save(dfp_agent.model.state_dict(), ))
 
     # print info
