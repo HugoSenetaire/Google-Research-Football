@@ -11,6 +11,7 @@ def create_args():
     parser.add_argument('--GLOBAL_PATH', type=str, default="experiments/")
     parser.add_argument('--load_model', action='store_true')
     parser.add_argument('--t', type = int, default=0) # when -1, use the last weights saved
+    parser.add_argument('--running_in_notebook', action = 'store_true')
     args = parser.parse_args()
     return vars(args)
 
@@ -21,7 +22,6 @@ def update_default_args(args):
     # Settings update :
 
     args.update({
-        "running_in_notebook" : True,
         "DEBUG": False,
         "SAVE_VIDEO" : False,
     })

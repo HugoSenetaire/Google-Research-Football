@@ -23,3 +23,27 @@
 
 ### Other Dependencies :
     Pytorch, Numpy, Matplotlib, Pygame
+
+
+# TRAIN :
+
+## Training from scratch
+Run a train experiment on a notebook :
+
+```python run_exp.py --experiment_name $EXPERIMENT_NAME --running_in_notebook```
+
+In this case, models and parameters will be saved in ```/content/drive/My Drive/google-football/$EXPERIMENT_NAME/```
+
+One can change the default path using :
+
+```--GLOBAL_PATH $path ```
+
+In this case, models and parameters will be saved in ```$GLOBAL_PATH/$EXPERIMENT_NAME/```
+
+## When loading a model 
+
+```python run_exp.py --experiment_name $EXPERIMENT_NAME --running_in_notebook --load_model```
+
+In this case, we will load the latest model in ```/content/drive/My Drive/google-football/$EXPERIMENT_NAME/```
+
+One can change the loaded iteration using ```--t```
