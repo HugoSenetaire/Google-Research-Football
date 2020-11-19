@@ -15,10 +15,10 @@ if __name__ == '__main__':
     update_default_args(args)
     if args["load_model"]:
         print("Load parameter from {}".format(os.path.join(args["TOTAL_PATH"],'argument.json')))
-        t = args["t"]
+        model_t = args["t"]
         with open(os.path.join(args["TOTAL_PATH"],'argument.pkl'), 'rb') as handle:
             args.update(pickle.load(handle))
-            args["t"] = t
+            args["t"] = model_t
             args["load_model"] = True
     else :
         with open(os.path.join(args["TOTAL_PATH"],'argument.json'), 'w') as fp:
