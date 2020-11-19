@@ -45,28 +45,28 @@ class RandomAgent():
 
 
 class DFPAgent():
-    def __init__(self, state_size, measurement_names, action_size, timesteps, use_cuda=False):
-      self.measurement_names = measurement_names
-      # get size of state, measurement, action, and timestep
-      self.state_size = state_size #sensory input size
-      self.measurement_size = len(measurement_names)
-      self.action_size = action_size
-      self.timesteps = timesteps
+    def __init__(self, args, use_cuda=False):
+      self.state_size = (len(args["CHANNEL_NAMES"]),)+args["IMAGE_SIZE"]
+      self.measurement_names = args["MEASUREMENT_NAMES"]
+      self.action_size = args["NB_ACTIONS"]
+      self.timesteps = args["TIMESTEPS"]
+      self.measurement_size = len(self.measurement_names)
       self.use_cuda = use_cuda
 
+
       # these is hyper parameters for the DFP
-      self.epsilon = 1.0
-      self.initial_epsilon = 1.0
-      self.final_epsilon = 0.0001
-      self.batch_size = 32
-      self.observe = 2000
-      self.explore = 50000 
-      self.frame_per_action = 4
-      self.timestep_per_train = 5 # Number of timesteps between training interval
+      self.epsilon = args["epsilon"]
+      self.initial_epsilon = args["initial_epsilon"]
+      self.final_epsilon = args["final_epsilon"]
+      self.batch_size = args["batch_size"]
+      self.observe = args["observe"]
+      self.explore = args["explore"] 
+      self.frame_per_action = args["frame_per_action"]
+      self.timestep_per_train = args["timestep_per_train"] # Number of timesteps between training interval
 
       # experience replay buffer
       self.memory = deque()
-      self.max_memory = 20000
+      self.max_memory = args["max_memory"]
 
       # create model
       self.model = DFPBasicModel(self.state_size, self.measurement_size, len(self.timesteps), self.action_size)
@@ -117,7 +117,7 @@ class DFPAgent():
         return torch.tensor(future_measurements)
     
     # Pick samples randomly from replay memory (with batch_size)
-    def train_minibatch_replay(self, goal, optimizer):
+    def train_minibatch_replay(self, goal, optimizer, scheduler):
         """
         Train on a single minibatch
         """
@@ -144,11 +144,11 @@ class DFPAgent():
         for i in range(self.batch_size):
             f_target[i, action[i]] = f_action_target[i]
           
-        loss = self.train_on_batch(optimizer, state_input, measurement_input, goal_input, f_target)
+        loss = self.train_on_batch(optimizer, scheduler, state_input, measurement_input, goal_input, f_target)
         return loss
 
 
-    def train_on_batch(self, optimizer, state_input, measurement_input, goal_input, f_target, verbose=False):
+    def train_on_batch(self, optimizer, scheduler, state_input, measurement_input, goal_input, f_target, verbose=False):
         self.model.train()
         if self.use_cuda:
           state_input, measurement_input, goal_input, f_target = state_input.cuda(), measurement_input.cuda(), goal_input.cuda(), f_target.cuda()
@@ -158,16 +158,10 @@ class DFPAgent():
         loss = criterion(output, f_target)
         loss.backward()
         optimizer.step()
+        if scheduler is not None :
+            scheduler.step()
         if torch.isnan(output-f_target).any():
           raise Exception("Naan cheeese alert!")
         return loss
 
     
-    # load the saved model
-    def save_model(self, path = "/content/drive/My Drive/google-football/weights.pth"):
-        torch.save(self.model.state_dict(), path)
-        self.model.load_weights(name)
-
-    #  save the model which is under training
-    def load_model(self, path):
-        self.model.load_state_dict(path)

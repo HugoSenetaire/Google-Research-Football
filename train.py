@@ -2,17 +2,17 @@ import agentLocal
 import model
 import utils
 import numpy as np
+import os
 
 
-
-
-def train(dfp_agent, env, optimizer, args, list_opposition):
+def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
   agent = list_opposition[0]
   observation = env.reset()
   done=False
   epsilon = dfp_agent.initial_epsilon
   GAME = 0
-  t = 0
+  t = args["t"]
+  t_observe = 0
   max_score = 0 # Maximum episode goal (Proxy for agent performance)
   score = 0
   # Buffer to compute rolling statistics 
@@ -27,11 +27,9 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
     
 
   ## Training loop
-  while t<dfp_agent.explore + dfp_agent.observe:
-    # print("joueur1")
-    # print(observation[0])
-    # print("joueur2")
-    # print(observation[1])
+  while t_observe<dfp_agent.observe or t<args["total_train"]:
+
+    
 
     action_op = agent.get_action(observation[1]['observation'])
 
@@ -51,14 +49,9 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
       print(e)
       done=True
 
-    # print("joueur1")
-    # print(observation[0])
-    # print("joueur2")
-    # print(observation[1])
 
     ## TODO: Add frame skip between each memory ?
     is_terminated = observation[0]['status'] == "DONE"
-    # break
     r_t = observation[0]['reward']
     score=r_t
 
@@ -67,49 +60,51 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
             max_score = score
         GAME += 1
         score_buffer.append(score)
-        print ("Episode Finish ")
+        print ("Episode Finished ")
         observation = env.reset()
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
 
     # Do the training
-    if t > dfp_agent.observe and t % dfp_agent.timestep_per_train == 0:
-        loss = dfp_agent.train_minibatch_replay(goal, optimizer).cpu().item()
+    if t_observe > dfp_agent.observe and t % dfp_agent.timestep_per_train == 0:
+        loss = dfp_agent.train_minibatch_replay(goal, optimizer, scheduler).cpu().item()
         if len(loss_queue)==loss_queue_size :
           loss_queue.pop(0)
         loss_queue.append(loss)
         
-        
-    t += 1
+    if t_observe>dfp_agent.observe :   
+      t += 1
+    else :
+      t_observe+=1
 
-    # save progress every 10000 iterations
-    if t>dfp_agent.observe and t % 10000 == 0:
-        print("Now we save model")
-        torch.save(dfp_agent.model.state_dict(), "/content/drive/My Drive/google-football/weights.pth")
+    # save progress every args["save_every"] iterations
+    if t_observe>dfp_agent.observe and t>args["t"] and t % args["save_every"] == 0:
+        path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
+        print(f"Model saved with iteration {t} at path {path}")
+        utils.save_model(t, optimizer, scheduler, dfp_agent, path)
+        # torch.save(dfp_agent.model.state_dict(), ))
 
     # print info
     state = ""
-    if t <= dfp_agent.observe:
+    if t_observe <= dfp_agent.observe:
         state = "observe"
-    elif t > dfp_agent.observe and t <= dfp_agent.observe + dfp_agent.explore:
+    elif t <= dfp_agent.explore:
         state = "explore"
     else:
         state = "train"
     if (is_terminated):
 
         mean_loss = np.mean(loss_queue)
-        
-        
-        print("TIME", t, "/ GAME", GAME, "/ STATE", state, \
+        print("TIME", t+t_observe, "/ TIME TRAIN", t, "/ GAME", GAME, "/ STATE", state, \
               "/ EPSILON", dfp_agent.epsilon, "/ ACTION", action_dfp, "/ REWARD", r_t, \
               "/ goal", max_score, "/ LOSS", mean_loss)
         
 
       
-        if t>dfp_agent.observe and len(loss_queue)>= loss_queue_size :
+        if t_observe>dfp_agent.observe and len(loss_queue)>= loss_queue_size :
           list_iter.append(t)
           loss_list.append(mean_loss)
-          with open('/content/drive/My Drive/google-football/metrics.csv','w') as f:
+          with open(os.path.join(args['TOTAL_PATH'],"metrics.csv"),'w') as f:
             f.write(str(list_iter).strip('[').strip(']') + "\n")
             f.write(str(loss_list).strip('[').strip(']'))
