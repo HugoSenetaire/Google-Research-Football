@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     if args["load_model"]:
         if args["t"]==0 :
-            utils.find_last_iteration(args)
+            args["t"] = utils.find_last_iteration(args)
         else :
             if not utils.check_weights(args):
                 raise NameError("Iteration wanted do not exist")

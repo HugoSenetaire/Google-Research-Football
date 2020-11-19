@@ -159,7 +159,7 @@ def find_last_iteration(args):
     raise NameError("No experiments previously trained at this path")
   list_t = list(map(lambda x: int(x.strip(os.path.join(total_path, "weights_")).strip(".pth")),list_trained)) # TODO : Changer ce monstre
   list_t.sort()
-  args["t"] = list_t[-1]
+  return list_t[-1]
 
 
 
