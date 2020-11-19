@@ -89,9 +89,9 @@ def update_default_args(args):
     #Optimizer update :
     args.update({
         "scheduler" : True,
-        "scheduler_rate" : 0.99,
+        "scheduler_rate" : 0.999,
         "scheduler_type" : "exponential",
-        "lr" : 0.00005,
+        "lr" : 0.0005,
         "momentum" : 0.9,
         "seed" : 1,
         "use_cuda" : torch.cuda.is_available(),
