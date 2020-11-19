@@ -69,7 +69,7 @@ class DFPAgent():
       self.max_memory = args["max_memory"]
 
       # create model
-      self.model = DFPBasicModel(self.state_size, self.measurement_size, len(self.timesteps), self.action_size)
+      self.model = DFPBasicModel(self.state_size, self.measurement_size, len(self.timesteps), self.action_size) 
       self.use_cuda = use_cuda
       if self.use_cuda :
           self.model = self.model.cuda()

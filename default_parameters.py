@@ -94,7 +94,6 @@ def update_default_args(args):
         "lr" : 0.0005,
         "momentum" : 0.9,
         "seed" : 1,
-        "use_cuda" : torch.cuda.is_available(),
         "optimizer" : "Adam", # 
         #"optimizer" = "SGD"
     })
