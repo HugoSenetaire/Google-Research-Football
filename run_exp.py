@@ -25,11 +25,11 @@ if __name__ == '__main__':
             json.dump(args, fp)
         with open(os.path.join(args["TOTAL_PATH"],'argument.pkl'), 'wb') as handle:
             pickle.dump(args, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    use_cuda = (torch.cuda.is_available() and args["gpu"])
+    args["use_cuda"] = (torch.cuda.is_available() and args["gpu"])
 
 
 
-    dfp_agent = DFPAgent(args, use_cuda=use_cuda)
+    dfp_agent = DFPAgent(args, use_cuda=args["use_cuda"])
     oppositionAgent = RandomAgent()
     
     optimizer = utils.create_optimizer(dfp_agent, args)
