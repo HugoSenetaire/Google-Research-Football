@@ -71,6 +71,8 @@ class DFPAgent():
       # create model
       self.model = DFPBasicModel(self.state_size, self.measurement_size, len(self.timesteps), self.action_size)
       self.use_cuda = use_cuda
+      if self.use_cuda :
+          self.model = self.model.cuda()
     
     def get_action(self, state, measurement, goal, inference_goal):
         """
