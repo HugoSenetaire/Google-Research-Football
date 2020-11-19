@@ -117,7 +117,7 @@ class DFPAgent():
         return torch.tensor(future_measurements)
     
     # Pick samples randomly from replay memory (with batch_size)
-    def train_minibatch_replay(self, goal, optimizer):
+    def train_minibatch_replay(self, goal, optimizer, scheduler):
         """
         Train on a single minibatch
         """
@@ -144,11 +144,11 @@ class DFPAgent():
         for i in range(self.batch_size):
             f_target[i, action[i]] = f_action_target[i]
           
-        loss = self.train_on_batch(optimizer, state_input, measurement_input, goal_input, f_target)
+        loss = self.train_on_batch(optimizer, scheduler, state_input, measurement_input, goal_input, f_target)
         return loss
 
 
-    def train_on_batch(self, optimizer, state_input, measurement_input, goal_input, f_target, verbose=False):
+    def train_on_batch(self, optimizer, scheduler, state_input, measurement_input, goal_input, f_target, verbose=False):
         self.model.train()
         if self.use_cuda:
           state_input, measurement_input, goal_input, f_target = state_input.cuda(), measurement_input.cuda(), goal_input.cuda(), f_target.cuda()
@@ -158,16 +158,10 @@ class DFPAgent():
         loss = criterion(output, f_target)
         loss.backward()
         optimizer.step()
+        if scheduler is not None :
+            scheduler.step()
         if torch.isnan(output-f_target).any():
           raise Exception("Naan cheeese alert!")
         return loss
 
     
-    # load the saved model
-    def save_model(self, path = "/content/drive/My Drive/google-football/weights.pth"):
-        torch.save(self.model.state_dict(), path)
-        self.model.load_weights(name)
-
-    #  save the model which is under training
-    def load_model(self, path):
-        self.model.load_state_dict(path)
