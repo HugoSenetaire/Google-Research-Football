@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from torch import optim
+import glob
+import os
 
 TOP_LEFT_CORNER_COORDS = (-1.1, -0.45)
 
@@ -109,6 +111,13 @@ def create_optimizer(dfp_agent,args):
   return optimizer
 
 
+def create_scheduler(optimizer,args):
+  if args["scheduler_type"] == "exponential":
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer,args["scheduler_rate"])
+  else :
+    raise NotImplementedError
+  return scheduler
+
 
 def create_goal(rel_goal, timesteps_size):
   """
@@ -118,3 +127,46 @@ def create_goal(rel_goal, timesteps_size):
   goal[-1]=torch.tensor(rel_goal)
   goal = goal.flatten()
   return goal
+
+
+def save_model(t, optimizer, scheduler, dfp_agent, path):
+  if scheduler is None :
+    torch.save({
+        't': t,
+        'model_state_dict': dfp_agent.model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, path)
+  else :
+      torch.save({
+        't': t,
+        'model_state_dict': dfp_agent.model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict()
+    }, path)
+
+
+def check_weights(args):
+  total_path = args["total_path"]
+  if not os.path.exists(os.path.join(total_path, "weights_{}.pth".format(args["t"]))):
+    return False
+  else : 
+    return True
+  
+def find_last_iteration(args):
+  total_path = args["total_path"]
+  list_trained = glob.glob(os.path.join(total_path),"*.pth")
+  if not os.path.exists or len(list_train) == 0 :
+    raise NameError("No experiments previously trained at this path")
+  list_t = map(lambda x: int(x.strip(os.path.join(total_path, "weights_").strip(".pth"))) # TODO : Changer ce monstre
+  list_t.sort()
+  args["t"] = list_t[-1]
+
+
+def load_model(dfp_agent, optimizer, scheduler, t, path):
+  checkpoint = torch.load(path)
+  dfp_agent.model.load_state_dict(checkpoint['model_state_dict'])
+  dfp_agent.epsilon -= t * (dfp_agent.initial_epsilon - dfp_agent.final_epsilon) / dfp_agent.explore
+  optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+  if scheduler is not None :
+    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+  t = checkpoint['t']

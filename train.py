@@ -2,17 +2,18 @@ import agentLocal
 import model
 import utils
 import numpy as np
+import os
 
 
 
 
-def train(dfp_agent, env, optimizer, args, list_opposition):
+def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
   agent = list_opposition[0]
   observation = env.reset()
   done=False
   epsilon = dfp_agent.initial_epsilon
   GAME = 0
-  t = 0
+  t = args["t"]
   max_score = 0 # Maximum episode goal (Proxy for agent performance)
   score = 0
   # Buffer to compute rolling statistics 
@@ -28,10 +29,6 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
 
   ## Training loop
   while t<dfp_agent.explore + dfp_agent.observe:
-    # print("joueur1")
-    # print(observation[0])
-    # print("joueur2")
-    # print(observation[1])
 
     action_op = agent.get_action(observation[1]['observation'])
 
@@ -51,14 +48,9 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
       print(e)
       done=True
 
-    # print("joueur1")
-    # print(observation[0])
-    # print("joueur2")
-    # print(observation[1])
 
     ## TODO: Add frame skip between each memory ?
     is_terminated = observation[0]['status'] == "DONE"
-    # break
     r_t = observation[0]['reward']
     score=r_t
 
@@ -75,7 +67,7 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
 
     # Do the training
     if t > dfp_agent.observe and t % dfp_agent.timestep_per_train == 0:
-        loss = dfp_agent.train_minibatch_replay(goal, optimizer).cpu().item()
+        loss = dfp_agent.train_minibatch_replay(goal, optimizer, scheduler).cpu().item()
         if len(loss_queue)==loss_queue_size :
           loss_queue.pop(0)
         loss_queue.append(loss)
@@ -86,7 +78,8 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
     # save progress every 10000 iterations
     if t>dfp_agent.observe and t % 10000 == 0:
         print("Now we save model")
-        torch.save(dfp_agent.model.state_dict(), "/content/drive/My Drive/google-football/weights.pth")
+        utils.save_model(t, optimizer, scheduler, dfp_agent, os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t)))
+        # torch.save(dfp_agent.model.state_dict(), ))
 
     # print info
     state = ""
@@ -110,6 +103,6 @@ def train(dfp_agent, env, optimizer, args, list_opposition):
         if t>dfp_agent.observe and len(loss_queue)>= loss_queue_size :
           list_iter.append(t)
           loss_list.append(mean_loss)
-          with open('/content/drive/My Drive/google-football/metrics.csv','w') as f:
+          with open(os.path.join(args['TOTAL_PATH'],"metrics.csv"),'w') as f:
             f.write(str(list_iter).strip('[').strip(']') + "\n")
             f.write(str(loss_list).strip('[').strip(']'))
