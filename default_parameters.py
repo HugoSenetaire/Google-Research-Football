@@ -8,12 +8,29 @@ def create_args():
     parser = argparse.ArgumentParser(description='DFP exp')
     parser.add_argument('--gpu', action='store_true', help='Whether to use GPU')
     parser.add_argument('--experiment_name', type=str, default = "None")
-    parser.add_argument('--global_path', type=str, default="experiments/")
+    parser.add_argument('--global_path', type=str)
     parser.add_argument('--load_model', action='store_true')
     parser.add_argument('--t', type = int, default=0) # when -1, use the last weights saved
     parser.add_argument('--running_in_notebook', action = 'store_true')
+    parser.add_argument('--env_num_steps', type=int, default=200)
     args = parser.parse_args()
     return vars(args)
+
+
+def get_total_path(args):
+    if args["global_path"] is None:
+        if args["running_in_notebook"]:
+            args["global_path"] =  "/content/drive/My Drive/google-football/"
+        else:
+            args["global_path"] = "experiments/"
+    
+    if args["experiment_name"]=="None" :
+        currentdate = str(datetime.datetime.now())
+        args["experiment_name"] = args["SCENARIO"] + "_" + currentdate  
+        
+    total_path = os.path.join(args["global_path"],args["experiment_name"])
+
+    return total_path
 
 
 
@@ -36,22 +53,13 @@ def update_default_args(args):
         "TIMESTEPS" : [1,2,4,8,16,32],
         "IMAGE_SIZE" : (43, 101),
         "NB_ACTIONS" : 19,
-        "NUM_STEPS" : 200
     })
 
         # Save update
 
     args["save_every"] = 5000
-
-    if args["global_path"] == "experiments/":
-        if args["running_in_notebook"]:
-            args["global_path"] =  "/content/drive/My Drive/google-football/"
-    
-    if args["experiment_name"]=="None" :
-        currentdate = str(datetime.datetime.now())
-        args["experiment_name"] = args["SCENARIO"] + "_" + currentdate  
         
-    total_path = os.path.join(args["global_path"],args["experiment_name"])
+    total_path = get_total_path(args)
     if not os.path.exists(total_path):
         os.makedirs(total_path)
 
