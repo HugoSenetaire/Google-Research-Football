@@ -4,6 +4,19 @@ import utils
 import numpy as np
 import os
 
+def env_step(env, agent, observation, action_op, goal, channel_names, image_size, measurement_names, epsilon=None, use_cuda=False):
+
+    frame_data = observation[0]["observation"]["players_raw"][0]
+    sensory = utils.frame_data_to_tensor(frame_data, channel_names, image_size)
+    measurements = utils.frame_data_to_measurements(observation[0], measurement_names)
+
+    if use_cuda:
+        sensory, measurements, goal = sensory.cuda(), measurements.cuda(), goal.cuda()
+      
+    action_dfp = agent.get_action(sensory, measurements, goal, goal, epsilon)
+    observation= env.step([[action_dfp],action_op])
+
+    return observation, action_dfp, sensory, measurements
 
 def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
   agent = list_opposition[0]
@@ -31,16 +44,7 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
 
     action_op = agent.get_action(observation[1]['observation'])
 
-    frame_data = observation[0]["observation"]["players_raw"][0]
-    sensory = utils.frame_data_to_tensor(frame_data, args["CHANNEL_NAMES"], args["IMAGE_SIZE"])
-    measurements = utils.frame_data_to_measurements(observation[0], args["MEASUREMENT_NAMES"])
-
-    if args["use_cuda"]:
-        sensory, measurements, goal = sensory.cuda(), measurements.cuda(), goal.cuda()
-      
-
-    action_dfp = dfp_agent.get_action(sensory, measurements, goal, goal)
-    observation= env.step([[action_dfp],action_op])
+    observation, action_dfp, sensory, measurements = env_step(env, dfp_agent, observation, action_op, goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], use_cuda=args['use_cuda'])
 
     ## TODO: Add frame skip between each memory ?
     is_terminated = observation[0]['status'] == "DONE"

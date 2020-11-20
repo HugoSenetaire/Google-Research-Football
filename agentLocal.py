@@ -74,11 +74,13 @@ class DFPAgent():
       if self.use_cuda :
           self.model = self.model.cuda()
     
-    def get_action(self, state, measurement, goal, inference_goal):
+    def get_action(self, state, measurement, goal, inference_goal, epsilon=None):
         """
         Get action from model using epsilon-greedy policy
         """
-        if np.random.rand() <= self.epsilon:
+        if epsilon is None:
+            epsilon=self.epsilon
+        if np.random.rand() <= epsilon:
             #print("----------Random Action----------")
             action_idx = random.randrange(self.action_size)
         else:
