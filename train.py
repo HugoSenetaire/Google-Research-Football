@@ -3,6 +3,7 @@ import model
 import utils
 import numpy as np
 import os
+from tqdm import tqdm
 
 def env_step(env, agent, observation, action_op, goal, channel_names, image_size, measurement_names, epsilon=None, use_cuda=False):
 
@@ -18,7 +19,7 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
 
     return observation, action_dfp, sensory, measurements
 
-def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
+def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition):
   agent = list_opposition[0]
   observation = env.reset()
   done=False
@@ -88,21 +89,23 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
         # torch.save(dfp_agent.model.state_dict(), ))
     
     # Evaluation 
-    if t>dfp_agent.observe and t%dfp_agent.evaluate_freq==0:
+    if t_observe>dfp_agent.observe and t%dfp_agent.evaluate_freq==0:
       eval_rewards = []
       episode_lengths = []
-      for i in range(dfp_agent.nb_evaluation_episodes):
+      for i in tqdm(range(dfp_agent.nb_evaluation_episodes)):
         eval_observation = eval_env.reset()
         eval_episode_is_terminated = False
         episode_length=0
         while not eval_episode_is_terminated:
-          action_op = agent(eval_observation[1]['observation'])
+          action_op = agent.get_action(observation[1]['observation'])
           eval_observation, action_dfp, sensory, measurements = env_step(eval_env, dfp_agent, eval_observation, action_op, eval_goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], epsilon=0, use_cuda=args['use_cuda'])
           eval_episode_is_terminated = eval_observation[0]['status'] == "DONE"
           episode_length+=1
         eval_rewards.append(eval_observation[0]['reward'])
         episode_lengths.append(episode_length)
         #TODO: save logs of evaluation
+      print(eval_rewards)
+      print(episode_lengths)
 
     # print info
     state = ""
