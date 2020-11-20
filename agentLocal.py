@@ -63,6 +63,8 @@ class DFPAgent():
       self.explore = args["explore"] 
       self.frame_per_action = args["frame_per_action"]
       self.timestep_per_train = args["timestep_per_train"] # Number of timesteps between training interval
+      self.evaluate_freq = args["agent_evaluate_freq"]
+      self.nb_evaluation_episodes = args["nb_evaluation_episodes"]
 
       # experience replay buffer
       self.memory = deque()

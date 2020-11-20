@@ -31,7 +31,11 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
   # Buffer to compute rolling statistics 
   score_buffer = []
   r_t = 0
-  goal = utils.create_last_timestep_goal([10,0.2,0.1,2], len(args["TIMESTEPS"]))
+  if args['RANDOM_TRAIN_GOAL']:
+    goal = utils.create_last_timestep_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), len(args["TIMESTEPS"]))
+  else:
+    goal = utils.create_last_timestep_goal(args['EVAL_GOAL'], len(args["TIMESTEPS"]))
+  eval_goal = utils.create_last_timestep_goal(args['EVAL_GOAL'], len(args["TIMESTEPS"]))
   loss = 0
   loss_queue_size = 50
   loss_queue = []
@@ -58,6 +62,8 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
         score_buffer.append(score)
         print ("Episode Finished ")
         observation = env.reset()
+        if args['RANDOM_TRAIN_GOAL']:
+          goal = utils.create_last_timestep_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), len(args["TIMESTEPS"]))
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
@@ -74,12 +80,29 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
     else :
       t_observe+=1
 
-    # save progress every args["save_every"] iterations
+    # save progress every args["save_every"] iterations (and make sure we don't save at first iteration)
     if t_observe>dfp_agent.observe and t>args["t"] and t % args["save_every"] == 0:
         path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
         print(f"Model saved with iteration {t} at path {path}")
         utils.save_model(t, optimizer, scheduler, dfp_agent, path)
         # torch.save(dfp_agent.model.state_dict(), ))
+    
+    # Evaluation 
+    if t>dfp_agent.observe and t%dfp_agent.evaluate_freq==0:
+      eval_rewards = []
+      episode_lengths = []
+      for i in range(dfp_agent.nb_evaluation_episodes):
+        eval_observation = eval_env.reset()
+        eval_episode_is_terminated = False
+        episode_length=0
+        while not eval_episode_is_terminated:
+          action_op = agent(eval_observation[1]['observation'])
+          eval_observation, action_dfp, sensory, measurements = env_step(eval_env, dfp_agent, eval_observation, action_op, eval_goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], epsilon=0, use_cuda=args['use_cuda'])
+          eval_episode_is_terminated = eval_observation[0]['status'] == "DONE"
+          episode_length+=1
+        eval_rewards.append(eval_observation[0]['reward'])
+        episode_lengths.append(episode_length)
+        #TODO: save logs of evaluation
 
     # print info
     state = ""
