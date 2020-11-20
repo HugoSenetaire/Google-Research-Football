@@ -29,8 +29,6 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
   ## Training loop
   while t_observe<dfp_agent.observe or t<args["total_train"]:
 
-    
-
     action_op = agent.get_action(observation[1]['observation'])
 
     frame_data = observation[0]["observation"]["players_raw"][0]
@@ -42,13 +40,7 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
       
 
     action_dfp = dfp_agent.get_action(sensory, measurements, goal, goal)
-    try:
-      observation= env.step([[action_dfp],action_op])
-    except Exception as e:
-      print("pre-mortem obs",observation)
-      print(e)
-      done=True
-
+    observation= env.step([[action_dfp],action_op])
 
     ## TODO: Add frame skip between each memory ?
     is_terminated = observation[0]['status'] == "DONE"
