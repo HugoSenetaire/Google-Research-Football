@@ -48,11 +48,14 @@ def update_default_args(args):
     # Games update :
     args.update({
         "SCENARIO" : "11_vs_11_kaggle",
-        "CHANNEL_NAMES" : ["left_team", 'right_team', 'left_team_direction', 'right_team_direction', 'ball', 'ball_direction'],
+        "CHANNEL_NAMES" : ["left_team", 'right_team', 'left_team_direction', 'right_team_direction', 'ball', 'ball_direction', "current_player"],
         "MEASUREMENT_NAMES" : ['goals', 'ball_distance_to_goal', "ball_distance_to_center", "possession"],
         "TIMESTEPS" : [1,2,4,8,16,32],
+        "timesteps_goal": [0,0,0,0.5,0.5,1],
         "IMAGE_SIZE" : (43, 101),
         "NB_ACTIONS" : 19,
+        "RANDOM_TRAIN_GOAL": False, #If false, train goal is equal to eval goal
+        "EVAL_GOAL": [10,0.2,0.1,2],
     })
 
         # Save update
@@ -79,7 +82,8 @@ def update_default_args(args):
         "frame_per_action" : 1, # TODO : USELESS ?
         "timestep_per_train" : 64,
         "max_memory" : 20000,
-
+        "agent_evaluate_freq": 5000,
+        "nb_evaluation_episodes": 20 #is that too much / too little (depends on scenario),
     })
 
 

@@ -30,6 +30,9 @@ def frame_data_to_channel(frame_data, channel_name, channel_shape):
     channel[coords_to_pixel(frame_data[channel_name][0] + frame_data['ball'][0],frame_data[channel_name][1] + frame_data['ball'][1], channel_shape)]=1
   elif channel_name == "ball":
     channel[coords_to_pixel(*frame_data[channel_name][:2], channel_shape)]=1
+  elif channel_name=="current_player":
+    active_player = frame_data['active']
+    channel[coords_to_pixel(*frame_data['left_team'][active_player], channel_shape)]=1
   elif 'direction' in channel_name:
     aux_channel_name = channel_name.split('_direction')[0]
     for i in range(len(frame_data[channel_name])):
@@ -101,6 +104,7 @@ def raw_data_to_target(episode_data, start_frame, measurement_names, future_time
 
 
 
+
 def create_optimizer(dfp_agent,args):
   if args["optimizer"] == "Adam":
     optimizer = optim.Adam(dfp_agent.model.parameters(), lr = args["lr"])
@@ -118,15 +122,14 @@ def create_scheduler(optimizer,args):
     raise NotImplementedError
   return scheduler
 
-
-def create_goal(rel_goal, timesteps_size):
+def create_goal(single_timestep_goal, timesteps_goal):
   """
   Create goal with given relative importance of measurements for the LAST timestep to predict (like in the paper)
   """
-  goal = torch.zeros((timesteps_size, len(rel_goal)), dtype=torch.float)
-  goal[-1]=torch.tensor(rel_goal)
-  goal = goal.flatten()
-  return goal
+  temp1 = torch.tensor(single_timestep_goal).repeat((len(timesteps_goal)))
+  temp2 = torch.tensor(timesteps_goal).repeat((4,1)).T.flatten()
+  goal = torch.tensor((single_timestep_goal)).view((-1,1)) * torch.tensor((timesteps_goal)).repeat((len(single_timestep_goal),1))
+  return temp1*temp2
 
 
 def save_model(t, optimizer, scheduler, dfp_agent, path):

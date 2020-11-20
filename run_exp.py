@@ -48,4 +48,5 @@ if __name__ == '__main__':
         utils.load_model(dfp_agent, optimizer, scheduler, args)
 
     env = make("football", configuration={"save_video": args["SAVE_VIDEO"], "scenario_name": args["SCENARIO"], "running_in_notebook": args["running_in_notebook"], "episodeSteps": args["env_num_steps"]}, debug=args["DEBUG"])
-    train(dfp_agent, env, optimizer, scheduler, args, list_opposition = [oppositionAgent])
+    eval_env = make("football", configuration={"save_video": args["SAVE_VIDEO"], "scenario_name": args["SCENARIO"], "running_in_notebook": args["running_in_notebook"], "episodeSteps": args["env_num_steps"]}, debug=args["DEBUG"])
+    train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition = [oppositionAgent])

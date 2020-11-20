@@ -3,9 +3,23 @@ import model
 import utils
 import numpy as np
 import os
+from tqdm import tqdm
 
+def env_step(env, agent, observation, action_op, goal, channel_names, image_size, measurement_names, epsilon=None, use_cuda=False):
 
-def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
+    frame_data = observation[0]["observation"]["players_raw"][0]
+    sensory = utils.frame_data_to_tensor(frame_data, channel_names, image_size)
+    measurements = utils.frame_data_to_measurements(observation[0], measurement_names)
+
+    if use_cuda:
+        sensory, measurements, goal = sensory.cuda(), measurements.cuda(), goal.cuda()
+      
+    action_dfp = agent.get_action(sensory, measurements, goal, goal, epsilon)
+    observation= env.step([[action_dfp],action_op])
+
+    return observation, action_dfp, sensory, measurements
+
+def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition):
   agent = list_opposition[0]
   observation = env.reset()
   done=False
@@ -18,7 +32,11 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
   # Buffer to compute rolling statistics 
   score_buffer = []
   r_t = 0
-  goal = utils.create_goal([10,0.2,0.1,2], len(args["TIMESTEPS"]))
+  if args['RANDOM_TRAIN_GOAL']:
+    goal = utils.create_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), args["timesteps_goal"])
+  else:
+    goal = utils.create_goal(args['EVAL_GOAL'], args["timesteps_goal"])
+  eval_goal = utils.create_goal(args['EVAL_GOAL'], args["timesteps_goal"])
   loss = 0
   loss_queue_size = 50
   loss_queue = []
@@ -29,26 +47,9 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
   ## Training loop
   while t_observe<dfp_agent.observe or t<args["total_train"]:
 
-    
-
     action_op = agent.get_action(observation[1]['observation'])
 
-    frame_data = observation[0]["observation"]["players_raw"][0]
-    sensory = utils.frame_data_to_tensor(frame_data, args["CHANNEL_NAMES"], args["IMAGE_SIZE"])
-    measurements = utils.frame_data_to_measurements(observation[0], args["MEASUREMENT_NAMES"])
-
-    if args["use_cuda"]:
-        sensory, measurements, goal = sensory.cuda(), measurements.cuda(), goal.cuda()
-      
-
-    action_dfp = dfp_agent.get_action(sensory, measurements, goal, goal)
-    try:
-      observation= env.step([[action_dfp],action_op])
-    except Exception as e:
-      print("pre-mortem obs",observation)
-      print(e)
-      done=True
-
+    observation, action_dfp, sensory, measurements = env_step(env, dfp_agent, observation, action_op, goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], use_cuda=args['use_cuda'])
 
     ## TODO: Add frame skip between each memory ?
     is_terminated = observation[0]['status'] == "DONE"
@@ -62,6 +63,8 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
         score_buffer.append(score)
         print ("Episode Finished ")
         observation = env.reset()
+        if args['RANDOM_TRAIN_GOAL']:
+          goal = utils.create_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), args["timesteps_goal"])
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
@@ -78,12 +81,31 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
     else :
       t_observe+=1
 
-    # save progress every args["save_every"] iterations
+    # save progress every args["save_every"] iterations (and make sure we don't save at first iteration)
     if t_observe>dfp_agent.observe and t>args["t"] and t % args["save_every"] == 0:
         path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
         print(f"Model saved with iteration {t} at path {path}")
         utils.save_model(t, optimizer, scheduler, dfp_agent, path)
         # torch.save(dfp_agent.model.state_dict(), ))
+    
+    # Evaluation 
+    if t_observe>dfp_agent.observe and t%dfp_agent.evaluate_freq==0:
+      eval_rewards = []
+      episode_lengths = []
+      for i in tqdm(range(dfp_agent.nb_evaluation_episodes)):
+        eval_observation = eval_env.reset()
+        eval_episode_is_terminated = False
+        episode_length=0
+        while not eval_episode_is_terminated:
+          action_op = agent.get_action(observation[1]['observation'])
+          eval_observation, action_dfp, sensory, measurements = env_step(eval_env, dfp_agent, eval_observation, action_op, eval_goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], epsilon=0, use_cuda=args['use_cuda'])
+          eval_episode_is_terminated = eval_observation[0]['status'] == "DONE"
+          episode_length+=1
+        eval_rewards.append(eval_observation[0]['reward'])
+        episode_lengths.append(episode_length)
+        #TODO: save logs of evaluation
+      print("eval_rewards",eval_rewards)
+      print("episode length", episode_lengths)
 
     # print info
     state = ""
