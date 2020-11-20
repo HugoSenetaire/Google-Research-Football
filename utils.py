@@ -30,6 +30,9 @@ def frame_data_to_channel(frame_data, channel_name, channel_shape):
     channel[coords_to_pixel(frame_data[channel_name][0] + frame_data['ball'][0],frame_data[channel_name][1] + frame_data['ball'][1], channel_shape)]=1
   elif channel_name == "ball":
     channel[coords_to_pixel(*frame_data[channel_name][:2], channel_shape)]=1
+  elif channel_name=="current_player":
+    active_player = frame_data['active']
+    channel[coords_to_pixel(*frame_data['left_team'][active_player], channel_shape)]=1
   elif 'direction' in channel_name:
     aux_channel_name = channel_name.split('_direction')[0]
     for i in range(len(frame_data[channel_name])):

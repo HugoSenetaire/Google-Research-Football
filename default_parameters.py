@@ -48,7 +48,7 @@ def update_default_args(args):
     # Games update :
     args.update({
         "SCENARIO" : "11_vs_11_kaggle",
-        "CHANNEL_NAMES" : ["left_team", 'right_team', 'left_team_direction', 'right_team_direction', 'ball', 'ball_direction'],
+        "CHANNEL_NAMES" : ["left_team", 'right_team', 'left_team_direction', 'right_team_direction', 'ball', 'ball_direction', "current_player"],
         "MEASUREMENT_NAMES" : ['goals', 'ball_distance_to_goal', "ball_distance_to_center", "possession"],
         "TIMESTEPS" : [1,2,4,8,16,32],
         "IMAGE_SIZE" : (43, 101),
