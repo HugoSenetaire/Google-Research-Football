@@ -18,7 +18,7 @@ def train(dfp_agent, env, optimizer, scheduler, args, list_opposition):
   # Buffer to compute rolling statistics 
   score_buffer = []
   r_t = 0
-  goal = utils.create_goal([10,0.2,0.1,2], len(args["TIMESTEPS"]))
+  goal = utils.create_last_timestep_goal([10,0.2,0.1,2], len(args["TIMESTEPS"]))
   loss = 0
   loss_queue_size = 50
   loss_queue = []

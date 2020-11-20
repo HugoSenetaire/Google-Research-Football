@@ -101,6 +101,7 @@ def raw_data_to_target(episode_data, start_frame, measurement_names, future_time
 
 
 
+
 def create_optimizer(dfp_agent,args):
   if args["optimizer"] == "Adam":
     optimizer = optim.Adam(dfp_agent.model.parameters(), lr = args["lr"])
@@ -118,13 +119,12 @@ def create_scheduler(optimizer,args):
     raise NotImplementedError
   return scheduler
 
-
-def create_goal(rel_goal, timesteps_size):
+def create_last_timestep_goal(single_timestep_goal, timesteps_size):
   """
   Create goal with given relative importance of measurements for the LAST timestep to predict (like in the paper)
   """
-  goal = torch.zeros((timesteps_size, len(rel_goal)), dtype=torch.float)
-  goal[-1]=torch.tensor(rel_goal)
+  goal = torch.zeros((timesteps_size, len(single_timestep_goal)), dtype=torch.float)
+  goal[-1]=torch.tensor(single_timestep_goal)
   goal = goal.flatten()
   return goal
 
