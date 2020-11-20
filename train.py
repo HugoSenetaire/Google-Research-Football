@@ -33,10 +33,10 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
   score_buffer = []
   r_t = 0
   if args['RANDOM_TRAIN_GOAL']:
-    goal = utils.create_last_timestep_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), len(args["TIMESTEPS"]))
+    goal = utils.create_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), args["timesteps_goal"])
   else:
-    goal = utils.create_last_timestep_goal(args['EVAL_GOAL'], len(args["TIMESTEPS"]))
-  eval_goal = utils.create_last_timestep_goal(args['EVAL_GOAL'], len(args["TIMESTEPS"]))
+    goal = utils.create_goal(args['EVAL_GOAL'], args["timesteps_goal"])
+  eval_goal = utils.create_goal(args['EVAL_GOAL'], args["timesteps_goal"])
   loss = 0
   loss_queue_size = 50
   loss_queue = []
@@ -64,7 +64,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
         print ("Episode Finished ")
         observation = env.reset()
         if args['RANDOM_TRAIN_GOAL']:
-          goal = utils.create_last_timestep_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), len(args["TIMESTEPS"]))
+          goal = utils.create_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), args["timesteps_goal"])
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
@@ -104,8 +104,8 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
         eval_rewards.append(eval_observation[0]['reward'])
         episode_lengths.append(episode_length)
         #TODO: save logs of evaluation
-      print(eval_rewards)
-      print(episode_lengths)
+      print("eval_rewards",eval_rewards)
+      print("episode length", episode_lengths)
 
     # print info
     state = ""

@@ -122,14 +122,14 @@ def create_scheduler(optimizer,args):
     raise NotImplementedError
   return scheduler
 
-def create_last_timestep_goal(single_timestep_goal, timesteps_size):
+def create_goal(single_timestep_goal, timesteps_goal):
   """
   Create goal with given relative importance of measurements for the LAST timestep to predict (like in the paper)
   """
-  goal = torch.zeros((timesteps_size, len(single_timestep_goal)), dtype=torch.float)
-  goal[-1]=torch.tensor(single_timestep_goal)
-  goal = goal.flatten()
-  return goal
+  temp1 = torch.tensor(single_timestep_goal).repeat((len(timesteps_goal)))
+  temp2 = torch.tensor(timesteps_goal).repeat((4,1)).T.flatten()
+  goal = torch.tensor((single_timestep_goal)).view((-1,1)) * torch.tensor((timesteps_goal)).repeat((len(single_timestep_goal),1))
+  return temp1*temp2
 
 
 def save_model(t, optimizer, scheduler, dfp_agent, path):
