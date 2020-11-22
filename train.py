@@ -96,7 +96,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
   
 
   ## Fill in the memory :
-  print(f"Start observation for {num_step} steps")
+  print(f"Start observation for { dfp_agent.observe} steps")
   observation, score_buffer, GAME, max_score, is_terminated = fill_replay_memory(0, dfp_agent, agent, env, observation, args, goal, score_buffer, GAME, max_score, num_step = dfp_agent.observe)
   print(f"End observation, start train")
   ## Training loop
