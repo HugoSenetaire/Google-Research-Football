@@ -21,7 +21,7 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
 
 
 
-def fill_replay_memory(dfp_agent,agent_opposition, args, score_buffer, GAME, num_step = 1):
+def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, score_buffer, GAME, num_step = 1):
   for i in range(num_step):
     action_op = agent_opposition.get_action(observation[1]['observation'])
 
@@ -45,7 +45,7 @@ def fill_replay_memory(dfp_agent,agent_opposition, args, score_buffer, GAME, num
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
 
-  return score_buffer, GAME
+  return observation,score_buffer, GAME
 
 
 def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition):
@@ -75,11 +75,11 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
   ## Fill in the memory :
 
-  score_buffer, GAME = fill_replay_memory(dfp_agent,agent, args, score_buffer, GAME, num_step = dfp_agent.observe)
+  score_buffer, GAME = fill_replay_memory(dfp_agent,agent, args, env, observation, score_buffer, GAME, num_step = dfp_agent.observe)
 
   ## Training loop
   while t<args["total_train"]:
-    
+
     # Do the training
     if t % dfp_agent.timestep_per_train == 0:
         loss = dfp_agent.train_minibatch_replay(goal, optimizer, scheduler).cpu().item()
