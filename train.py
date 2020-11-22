@@ -75,7 +75,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
   ## Fill in the memory :
 
-  score_buffer, GAME = fill_replay_memory(dfp_agent,agent, args, env, observation, score_buffer, GAME, num_step = dfp_agent.observe)
+  score_buffer, GAME = fill_replay_memory(dfp_agent, agent, env, observation,  args, score_buffer, GAME, num_step = dfp_agent.observe)
 
   ## Training loop
   while t<args["total_train"]:
