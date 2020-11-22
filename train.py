@@ -21,7 +21,8 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
 
 
 
-def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, goal, score_buffer, GAME, num_step = 1):
+def fill_replay_memory(t, dfp_agent,agent_opposition, env, observation, args, goal, score_buffer, GAME, num_step = 1):
+  
   for i in range(num_step):
     action_op = agent_opposition.get_action(observation[1]['observation'])
 
@@ -43,12 +44,13 @@ def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, goal,
           goal = utils.create_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), args["timesteps_goal"])
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
-    dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
+    dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated) # T est demandé mais pourquoi utiliser t ici ? Pas d'utilisation dans replay memory ? Besoin pour multithreading ?
+    
 
   return observation,score_buffer, GAME
 
 
-def evaluation(eval_env, dfp_agent,agent, eval_rewards, episode_lengths):
+def evaluation(eval_env, dfp_agent,agent, eval_goal, args, eval_rewards, episode_lengths):
     eval_rewards = []
     episode_lengths = []
     for i in tqdm(range(dfp_agent.nb_evaluation_episodes)):
@@ -95,11 +97,13 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
   ## Fill in the memory :
 
-  score_buffer, GAME = fill_replay_memory(dfp_agent, agent, env, observation,  args, goal, score_buffer, GAME, num_step = dfp_agent.observe)
+  observation,score_buffer, GAME = fill_replay_memory(0, dfp_agent, agent, env, observation,  args, goal, score_buffer, GAME, num_step = dfp_agent.observe)
 
   ## Training loop
   while t<args["total_train"]:
-
+    
+    
+    observation,score_buffer, GAME = fill_replay_memory(t, dfp_agent, agent, env, observation,  args, goal, score_buffer, GAME)
     # Do the training
     if t % dfp_agent.timestep_per_train == 0:
         loss = dfp_agent.train_minibatch_replay(goal, optimizer, scheduler).cpu().item()
@@ -118,7 +122,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
     
     # Evaluate:
     if t%dfp_agent.evaluate_freq==0:
-      evaluation(eval_env, dfp_agent,agent, eval_rewards, episode_lengths)
+      evaluation(eval_env, dfp_agent,agent, eval_goal, args, eval_rewards, episode_lengths)
 
 
     # print info
