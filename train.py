@@ -50,7 +50,7 @@ def fill_replay_memory(t, dfp_agent,agent_opposition, env, observation, args, go
   return observation,score_buffer, GAME, max_score, is_terminated, action_dfp
 
 
-def evaluation(eval_env, dfp_agent,agent, eval_goal, args, eval_rewards, episode_lengths):
+def evaluation(eval_env, dfp_agent,agent, eval_goal, args):
     eval_rewards = []
     episode_lengths = []
     for i in tqdm(range(dfp_agent.nb_evaluation_episodes)):
@@ -122,7 +122,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
     
     # Evaluate:
     if t%dfp_agent.evaluate_freq==0:
-      evaluation(eval_env, dfp_agent,agent, eval_goal, args, eval_rewards, episode_lengths)
+      evaluation(eval_env, dfp_agent,agent, eval_goal, args)
 
 
     # print info
