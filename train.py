@@ -38,7 +38,7 @@ def fill_replay_memory(t, dfp_agent,agent_opposition, env, observation, args, go
             max_score = score
         GAME += 1
         score_buffer.append(score)
-        print ("Episode Finished ")
+        print ("Episode Finished")
         observation = env.reset()
         if args['RANDOM_TRAIN_GOAL']:
           goal = utils.create_goal(list(np.random.rand(len( args['MEASUREMENT_NAMES']))), args["timesteps_goal"])
@@ -47,7 +47,7 @@ def fill_replay_memory(t, dfp_agent,agent_opposition, env, observation, args, go
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated) # T est demandé mais pourquoi utiliser t ici ? Pas d'utilisation dans replay memory ? Besoin pour multithreading ?
     
 
-  return observation,score_buffer, GAME, max_score
+  return observation,score_buffer, GAME, max_score, is_terminated
 
 
 def evaluation(eval_env, dfp_agent,agent, eval_goal, args, eval_rewards, episode_lengths):
@@ -96,14 +96,14 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
   
 
   ## Fill in the memory :
-
-  observation, score_buffer, GAME, max_score = fill_replay_memory(0, dfp_agent, agent, env, observation, args, goal, score_buffer, GAME, max_score, num_step = dfp_agent.observe)
-
+  print(f"Start observation for {num_step} steps")
+  observation, score_buffer, GAME, max_score, is_terminated = fill_replay_memory(0, dfp_agent, agent, env, observation, args, goal, score_buffer, GAME, max_score, num_step = dfp_agent.observe)
+  print(f"End observation, start train")
   ## Training loop
   while t<args["total_train"]:
     
     
-    observation, score_buffer, GAME, max_score = fill_replay_memory(t, dfp_agent, agent, env, observation,  args, goal, score_buffer, GAME, max_score)
+    observation, score_buffer, GAME, max_score, is_terminated = fill_replay_memory(t, dfp_agent, agent, env, observation,  args, goal, score_buffer, GAME, max_score)
     # Do the training
     if t % dfp_agent.timestep_per_train == 0:
         loss = dfp_agent.train_minibatch_replay(goal, optimizer, scheduler).cpu().item()
