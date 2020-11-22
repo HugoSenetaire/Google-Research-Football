@@ -21,7 +21,7 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
 
 
 
-def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, score_buffer, GAME, num_step = 1):
+def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, goal, score_buffer, GAME, num_step = 1):
   for i in range(num_step):
     action_op = agent_opposition.get_action(observation[1]['observation'])
 
@@ -46,6 +46,26 @@ def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, score
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
 
   return observation,score_buffer, GAME
+
+
+def evaluation(eval_env, dfp_agent,agent, eval_rewards, episode_lengths):
+    eval_rewards = []
+    episode_lengths = []
+    for i in tqdm(range(dfp_agent.nb_evaluation_episodes)):
+      eval_observation = eval_env.reset()
+      eval_episode_is_terminated = False
+      episode_length=0
+      while not eval_episode_is_terminated:
+        action_op = agent.get_action(observation[1]['observation'])
+        eval_observation, action_dfp, sensory, measurements = env_step(eval_env, dfp_agent, eval_observation, action_op, eval_goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], epsilon=0, use_cuda=args['use_cuda'])
+        eval_episode_is_terminated = eval_observation[0]['status'] == "DONE"
+        episode_length+=1
+      eval_rewards.append(eval_observation[0]['reward'])
+      episode_lengths.append(episode_length)
+      #TODO: save logs of evaluation
+    print("eval_rewards",eval_rewards)
+    print("episode length", episode_lengths)
+  
 
 
 def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition):
@@ -75,7 +95,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
   ## Fill in the memory :
 
-  score_buffer, GAME = fill_replay_memory(dfp_agent, agent, env, observation,  args, score_buffer, GAME, num_step = dfp_agent.observe)
+  score_buffer, GAME = fill_replay_memory(dfp_agent, agent, env, observation,  args, goal, score_buffer, GAME, num_step = dfp_agent.observe)
 
   ## Training loop
   while t<args["total_train"]:
@@ -95,26 +115,11 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
         path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
         print(f"Model saved with iteration {t} at path {path}")
         utils.save_model(t, optimizer, scheduler, dfp_agent, path)
-        # torch.save(dfp_agent.model.state_dict(), ))
     
-    # Evaluation 
+    # Evaluate:
     if t%dfp_agent.evaluate_freq==0:
-      eval_rewards = []
-      episode_lengths = []
-      for i in tqdm(range(dfp_agent.nb_evaluation_episodes)):
-        eval_observation = eval_env.reset()
-        eval_episode_is_terminated = False
-        episode_length=0
-        while not eval_episode_is_terminated:
-          action_op = agent.get_action(observation[1]['observation'])
-          eval_observation, action_dfp, sensory, measurements = env_step(eval_env, dfp_agent, eval_observation, action_op, eval_goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], epsilon=0, use_cuda=args['use_cuda'])
-          eval_episode_is_terminated = eval_observation[0]['status'] == "DONE"
-          episode_length+=1
-        eval_rewards.append(eval_observation[0]['reward'])
-        episode_lengths.append(episode_length)
-        #TODO: save logs of evaluation
-      print("eval_rewards",eval_rewards)
-      print("episode length", episode_lengths)
+      evaluation(eval_env, dfp_agent,agent, eval_rewards, episode_lengths)
+
 
     # print info
     if t <= dfp_agent.explore:
