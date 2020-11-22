@@ -41,7 +41,7 @@ def fill_replay_memory(t, dfp_agent,agent_opposition, env, observation, args, go
         print ("Episode Finished ")
         observation = env.reset()
         if args['RANDOM_TRAIN_GOAL']:
-          goal = utils.create_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), args["timesteps_goal"])
+          goal = utils.create_goal(list(np.random.rand(len( args['MEASUREMENT_NAMES']))), args["timesteps_goal"])
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated) # T est demandé mais pourquoi utiliser t ici ? Pas d'utilisation dans replay memory ? Besoin pour multithreading ?
