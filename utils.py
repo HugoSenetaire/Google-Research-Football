@@ -175,4 +175,3 @@ def load_model(dfp_agent, optimizer, scheduler, args):
   optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
   if scheduler is not None :
     scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-

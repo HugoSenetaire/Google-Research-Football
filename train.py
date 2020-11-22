@@ -19,35 +19,11 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
 
     return observation, action_dfp, sensory, measurements
 
-def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition):
-  agent = list_opposition[0]
-  observation = env.reset()
-  done=False
-  epsilon = dfp_agent.initial_epsilon
-  GAME = 0
-  t = args["t"]
-  t_observe = 0
-  max_score = 0 # Maximum episode goal (Proxy for agent performance)
-  score = 0
-  # Buffer to compute rolling statistics 
-  score_buffer = []
-  r_t = 0
-  if args['RANDOM_TRAIN_GOAL']:
-    goal = utils.create_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), args["timesteps_goal"])
-  else:
-    goal = utils.create_goal(args['EVAL_GOAL'], args["timesteps_goal"])
-  eval_goal = utils.create_goal(args['EVAL_GOAL'], args["timesteps_goal"])
-  loss = 0
-  loss_queue_size = 50
-  loss_queue = []
-  loss_list = []
-  list_iter = []
-    
 
-  ## Training loop
-  while t_observe<dfp_agent.observe or t<args["total_train"]:
 
-    action_op = agent.get_action(observation[1]['observation'])
+def fill_replay_memory(dfp_agent,agent_opposition, args, score_buffer, GAME, num_step = 1):
+  for i in range(num_step):
+    action_op = agent_opposition.get_action(observation[1]['observation'])
 
     observation, action_dfp, sensory, measurements = env_step(env, dfp_agent, observation, action_op, goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], use_cuda=args['use_cuda'])
 
@@ -69,27 +45,60 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
     dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated)
 
+  return score_buffer, GAME
+
+
+def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition):
+  agent = list_opposition[0]
+  observation = env.reset()
+  done = False
+  epsilon = dfp_agent.initial_epsilon
+  GAME = 0
+  t = args["t"]
+  max_score = 0 # Maximum episode goal (Proxy for agent performance)
+  score = 0
+
+  # Buffer to compute rolling statistics 
+  score_buffer = []
+  r_t = 0
+  if args['RANDOM_TRAIN_GOAL']:
+    goal = utils.create_goal(list(np.random.rand(len(MEASUREMENT_NAMES))), args["timesteps_goal"])
+  else:
+    goal = utils.create_goal(args['EVAL_GOAL'], args["timesteps_goal"])
+  eval_goal = utils.create_goal(args['EVAL_GOAL'], args["timesteps_goal"])
+  loss = 0
+  loss_queue_size = 50
+  loss_queue = []
+  loss_list = []
+  list_iter = []
+  
+
+  ## Fill in the memory :
+
+  score_buffer, GAME = fill_replay_memory(dfp_agent,agent, args, score_buffer, GAME, num_step = dfp_agent.observe)
+
+  ## Training loop
+  while t<args["total_train"]:
+    
     # Do the training
-    if t_observe > dfp_agent.observe and t % dfp_agent.timestep_per_train == 0:
+    if t % dfp_agent.timestep_per_train == 0:
         loss = dfp_agent.train_minibatch_replay(goal, optimizer, scheduler).cpu().item()
         if len(loss_queue)==loss_queue_size :
           loss_queue.pop(0)
         loss_queue.append(loss)
-        
-    if t_observe>dfp_agent.observe :   
-      t += 1
-    else :
-      t_observe+=1
+ 
+    t += 1
+
 
     # save progress every args["save_every"] iterations (and make sure we don't save at first iteration)
-    if t_observe>dfp_agent.observe and t>args["t"] and t % args["save_every"] == 0:
+    if t>args["t"] and t % args["save_every"] == 0:
         path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
         print(f"Model saved with iteration {t} at path {path}")
         utils.save_model(t, optimizer, scheduler, dfp_agent, path)
         # torch.save(dfp_agent.model.state_dict(), ))
     
     # Evaluation 
-    if t_observe>dfp_agent.observe and t%dfp_agent.evaluate_freq==0:
+    if t%dfp_agent.evaluate_freq==0:
       eval_rewards = []
       episode_lengths = []
       for i in tqdm(range(dfp_agent.nb_evaluation_episodes)):
@@ -108,23 +117,20 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
       print("episode length", episode_lengths)
 
     # print info
-    state = ""
-    if t_observe <= dfp_agent.observe:
-        state = "observe"
-    elif t <= dfp_agent.explore:
+    if t <= dfp_agent.explore:
         state = "explore"
     else:
         state = "train"
-    if (is_terminated):
 
+    if (is_terminated):
         mean_loss = np.mean(loss_queue)
-        print("TIME", t+t_observe, "/ TIME TRAIN", t, "/ GAME", GAME, "/ STATE", state, \
+        print("TIME", t, "/ GAME", GAME, "/ STATE", state, \
               "/ EPSILON", dfp_agent.epsilon, "/ ACTION", action_dfp, "/ REWARD", r_t, \
               "/ goal", max_score, "/ LOSS", mean_loss)
         
 
       
-        if t_observe>dfp_agent.observe and len(loss_queue)>= loss_queue_size :
+        if len(loss_queue)>= loss_queue_size :
           list_iter.append(t)
           loss_list.append(mean_loss)
           with open(os.path.join(args['TOTAL_PATH'],"metrics.csv"),'w') as f:
