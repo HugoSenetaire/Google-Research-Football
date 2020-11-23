@@ -132,7 +132,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
     mean_loss = np.mean(loss_queue)
     print("STEP TOTAL",t_train * dfp_agent.timestep_per_train + dfp_agent.observe , "TIME TRAINED", t_train, "/ GAME", GAME, "/ STATE", state, \
-          "/ EPSILON", dfp_agent.epsilon, "/ ACTION", action_dfp, "/ REWARD", r_t, \
+          "/ EPSILON", dfp_agent.epsilon, "/ REWARD", r_t, \
           "/ goal", max_score, "/ LOSS", mean_loss)
     
 
