@@ -138,7 +138,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
   
     if len(loss_queue) >= loss_queue_size :
-      list_iter.append(t)
+      list_iter.append(t_train)
       loss_list.append(mean_loss)
       with open(os.path.join(args['TOTAL_PATH'],"metrics.csv"),'w') as f:
         f.write(str(list_iter).strip('[').strip(']') + "\n")
