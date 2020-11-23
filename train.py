@@ -113,7 +113,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
     # save progress every args["save_every"] iterations (and make sure we don't save at first iteration)
     if t_train % args["save_every"] == 0:
-        path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
+        path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t_train))
         print(f"Model saved with iteration of training {t_train} at path {path}")
         utils.save_model(t_train, optimizer, scheduler, dfp_agent, path)
     
