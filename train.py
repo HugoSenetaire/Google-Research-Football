@@ -21,7 +21,7 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
 
 
 
-def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, goal, score_buffer, GAME, max_score, num_step = 1):
+def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, goal, score_buffer, GAME, max_score, num_step = 1, explore = True):
   
   for i in range(num_step):
     action_op = agent_opposition.get_action(observation[1]['observation'])
@@ -44,7 +44,7 @@ def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, goal,
           goal = utils.create_goal(list(np.random.rand(len( args['MEASUREMENT_NAMES']))), args["timesteps_goal"])
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
-    dfp_agent.replay_memory(sensory, action_dfp, r_t, None, measurements, is_terminated) # T est demandé mais pourquoi utiliser t ici ? Pas d'utilisation dans replay memory ? Besoin pour multithreading ?
+    dfp_agent.replay_memory(sensory, action_dfp, r_t, None, measurements, is_terminated, explore) # T est demandé mais pourquoi utiliser t ici ? Pas d'utilisation dans replay memory ? Besoin pour multithreading ?
     
 
   return score_buffer, GAME, max_score
@@ -96,7 +96,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
   ## Fill in the memory :
   print(f"Start observation for { dfp_agent.observe} steps")
-  score_buffer, GAME, max_score = fill_replay_memory(dfp_agent, agent, env, observation, args, goal, score_buffer, GAME, max_score, num_step = dfp_agent.observe)
+  score_buffer, GAME, max_score = fill_replay_memory(dfp_agent, agent, env, observation, args, goal, score_buffer, GAME, max_score, num_step = dfp_agent.observe, explore= False)
   print(f"End observation, start train")
   ## Training loop
   while t_train<args["total_train"]:
