@@ -60,7 +60,7 @@ def update_default_args(args):
 
         # Save update
 
-    args["save_every"] = 20
+    args["save_every"] = 100
         
     total_path = get_total_path(args)
     if not os.path.exists(total_path):
@@ -82,7 +82,7 @@ def update_default_args(args):
         "frame_per_action" : 1, # TODO : USELESS ?
         "timestep_per_train" : 64,
         "max_memory" : 20000,
-        "agent_evaluate_freq": 20,
+        "agent_evaluate_freq": 100,
         "nb_evaluation_episodes": 20 #is that too much / too little (depends on scenario),
     })
 
