@@ -96,7 +96,7 @@ class DFPAgent():
         return action_idx
     
     # Save trajectory sample <s,a,r,s'> to the replay memory
-    def replay_memory(self, t, s_t, action_idx, r_t, s_t1, m_t, is_terminated):
+    def replay_memory(self, s_t, action_idx, r_t, s_t1, m_t, is_terminated):
         self.memory.append((s_t, action_idx, r_t, s_t1, m_t, is_terminated))
         if self.epsilon > self.final_epsilon and t > self.observe:
             self.epsilon -= (self.initial_epsilon - self.final_epsilon) / self.explore
