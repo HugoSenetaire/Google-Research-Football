@@ -21,7 +21,7 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
 
 
 
-def fill_replay_memory(t, dfp_agent,agent_opposition, env, observation, args, goal, score_buffer, GAME, max_score, num_step = 1):
+def fill_replay_memory(dfp_agent,agent_opposition, env, observation, args, goal, score_buffer, GAME, max_score, num_step = 1):
   
   for i in range(num_step):
     action_op = agent_opposition.get_action(observation[1]['observation'])
@@ -44,10 +44,10 @@ def fill_replay_memory(t, dfp_agent,agent_opposition, env, observation, args, go
           goal = utils.create_goal(list(np.random.rand(len( args['MEASUREMENT_NAMES']))), args["timesteps_goal"])
     
     # save the sample <s, a, r, s'> to the replay memory and decrease epsilon
-    dfp_agent.replay_memory(t, sensory, action_dfp, r_t, None, measurements, is_terminated) # T est demandé mais pourquoi utiliser t ici ? Pas d'utilisation dans replay memory ? Besoin pour multithreading ?
+    dfp_agent.replay_memory(sensory, action_dfp, r_t, None, measurements, is_terminated) # T est demandé mais pourquoi utiliser t ici ? Pas d'utilisation dans replay memory ? Besoin pour multithreading ?
     
 
-  return observation,score_buffer, GAME, max_score, is_terminated, action_dfp
+  return score_buffer, GAME, max_score
 
 
 def evaluation(eval_env, dfp_agent,agent, eval_goal, args):
@@ -73,10 +73,9 @@ def evaluation(eval_env, dfp_agent,agent, eval_goal, args):
 def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition):
   agent = list_opposition[0]
   observation = env.reset()
-  done = False
   epsilon = dfp_agent.initial_epsilon
   GAME = 0
-  t = args["t"]
+  t_train = args["t"]
   max_score = 0 # Maximum episode goal (Proxy for agent performance)
   score = 0
 
@@ -97,51 +96,50 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
 
   ## Fill in the memory :
   print(f"Start observation for { dfp_agent.observe} steps")
-  observation, score_buffer, GAME, max_score, is_terminated, action_dfp = fill_replay_memory(0, dfp_agent, agent, env, observation, args, goal, score_buffer, GAME, max_score, num_step = dfp_agent.observe)
+  score_buffer, GAME, max_score = fill_replay_memory(dfp_agent, agent, env, observation, args, goal, score_buffer, GAME, max_score, num_step = dfp_agent.observe)
   print(f"End observation, start train")
   ## Training loop
-  while t<args["total_train"]:
+  while t_train<args["total_train"]:
     
     
-    observation, score_buffer, GAME, max_score, is_terminated, action_dfp = fill_replay_memory(t, dfp_agent, agent, env, observation,  args, goal, score_buffer, GAME, max_score)
+    score_buffer, GAME, max_score = fill_replay_memory(dfp_agent, agent, env, observation,  args, goal, score_buffer, GAME, max_score, num_step = dfp_agent.timestep_per_train)
     # Do the training
-    if t % dfp_agent.timestep_per_train == 0:
-        loss = dfp_agent.train_minibatch_replay(goal, optimizer, scheduler).cpu().item()
-        if len(loss_queue)==loss_queue_size :
-          loss_queue.pop(0)
-        loss_queue.append(loss)
+    loss = dfp_agent.train_minibatch_replay(goal, optimizer, scheduler).cpu().item()
+    if len(loss_queue)==loss_queue_size :
+      loss_queue.pop(0)
+    loss_queue.append(loss)
  
-    t += 1
+    t_train += 1
 
 
     # save progress every args["save_every"] iterations (and make sure we don't save at first iteration)
-    if t>args["t"] and t % args["save_every"] == 0:
+    if t_train % args["save_every"] == 0:
         path = os.path.join(args["TOTAL_PATH"],"weights_{}.pth".format(t))
-        print(f"Model saved with iteration {t} at path {path}")
-        utils.save_model(t, optimizer, scheduler, dfp_agent, path)
+        print(f"Model saved with iteration of training {t_train} at path {path}")
+        utils.save_model(t_train, optimizer, scheduler, dfp_agent, path)
     
     # Evaluate:
-    if t%dfp_agent.evaluate_freq==0:
+    if t_train%dfp_agent.evaluate_freq==0:
       evaluation(eval_env, dfp_agent,agent, eval_goal, args)
 
 
     # print info
-    if t <= dfp_agent.explore:
+    if t_train*dfp_agent.timestep_per_train <= dfp_agent.explore:
         state = "explore"
     else:
         state = "train"
 
-    if (is_terminated):
-        mean_loss = np.mean(loss_queue)
-        print("TIME", t, "/ GAME", GAME, "/ STATE", state, \
-              "/ EPSILON", dfp_agent.epsilon, "/ ACTION", action_dfp, "/ REWARD", r_t, \
-              "/ goal", max_score, "/ LOSS", mean_loss)
-        
 
-      
-        if len(loss_queue)>= loss_queue_size :
-          list_iter.append(t)
-          loss_list.append(mean_loss)
-          with open(os.path.join(args['TOTAL_PATH'],"metrics.csv"),'w') as f:
-            f.write(str(list_iter).strip('[').strip(']') + "\n")
-            f.write(str(loss_list).strip('[').strip(']'))
+    mean_loss = np.mean(loss_queue)
+    print("STEP TOTAL",t_train * dfp_agent.timestep_per_train + dfp_agent.observe , "TIME TRAINED", t_train, "/ GAME", GAME, "/ STATE", state, \
+          "/ EPSILON", dfp_agent.epsilon, "/ ACTION", action_dfp, "/ REWARD", r_t, \
+          "/ goal", max_score, "/ LOSS", mean_loss)
+    
+
+  
+    if len(loss_queue) >= loss_queue_size :
+      list_iter.append(t)
+      loss_list.append(mean_loss)
+      with open(os.path.join(args['TOTAL_PATH'],"metrics.csv"),'w') as f:
+        f.write(str(list_iter).strip('[').strip(']') + "\n")
+        f.write(str(loss_list).strip('[').strip(']'))
