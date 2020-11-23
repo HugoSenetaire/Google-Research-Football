@@ -58,7 +58,7 @@ def evaluation(eval_env, dfp_agent,agent, eval_goal, args):
       eval_episode_is_terminated = False
       episode_length=0
       while not eval_episode_is_terminated:
-        action_op = agent.get_action(observation[1]['observation'])
+        action_op = agent.get_action(eval_observation[1]['observation'])
         eval_observation, action_dfp, sensory, measurements = env_step(eval_env, dfp_agent, eval_observation, action_op, eval_goal, args['CHANNEL_NAMES'], args['IMAGE_SIZE'], args['MEASUREMENT_NAMES'], epsilon=0, use_cuda=args['use_cuda'])
         eval_episode_is_terminated = eval_observation[0]['status'] == "DONE"
         episode_length+=1
