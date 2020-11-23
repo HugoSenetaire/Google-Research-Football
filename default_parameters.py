@@ -77,8 +77,8 @@ def update_default_args(args):
         "initial_epsilon" : 1.0,
         "final_epsilon": 0.0001,
         "batch_size" : 64,
-        "explore" : 10000000,
-        "observe" : 2000,
+        "explore" : 2000000, # Here it's step in the sense of training step
+        "observe" : 2000, # Here it's a step in the sense of environment frame
         "frame_per_action" : 1, # TODO : USELESS ?
         "timestep_per_train" : 64,
         "max_memory" : 20000,
