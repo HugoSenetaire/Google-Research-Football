@@ -89,6 +89,8 @@ class DFPAgent():
             state=state.unsqueeze(dim=0)
             measurement = measurement.unsqueeze(dim=0)
             goal = goal.unsqueeze(dim=0)
+            if self.use_cuda :
+                state, measurement, goal, inference_goal = state.cuda(), measurement.cuda(), goal.cuda(), inference_goal.cuda()
             f = self.model(state, measurement, goal)
             f_pred = f.squeeze(dim=0)
             obj = f_pred@inference_goal # num_action
