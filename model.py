@@ -8,7 +8,7 @@ class DFPBasicModel(torch.nn.Module):
     self.perception2=torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
     self.perception3=torch.nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
     #Determiner la taille d'input de la couche lineaire
-    self.perception4=torch.nn.Linear(60*64, 512)
+    self.perception4=torch.nn.Linear(sensory_size[1]*sensory_size[2], 512)
     
     self.measurement1=torch.nn.Linear(measurement_size, 128)
     self.measurement2=torch.nn.Linear(128, 128)
