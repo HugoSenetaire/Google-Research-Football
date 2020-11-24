@@ -145,8 +145,7 @@ class DFPAgent():
         if self.use_cuda:
           state_input, measurement_input, goal_input = state_input.cuda(), measurement_input.cuda(), goal_input.cuda()
           
-        f_target = self.model(state_input, measurement_input, goal_input)
-
+        f_target = self.model(state_input, measurement_input, goal_input) # Hackermove : TODO Essayer un mask select
         for i in range(self.batch_size):
             f_target[i, action[i]] = f_action_target[i]
           
@@ -157,10 +156,10 @@ class DFPAgent():
     def train_on_batch(self, optimizer, scheduler, state_input, measurement_input, goal_input, f_target, verbose=False):
         self.model.train()
         if self.use_cuda:
-          state_input, measurement_input, goal_input, f_target = state_input.cuda(), measurement_input.cuda(), goal_input.cuda(), f_target.cuda()
+         f_target = f_target.cuda()
         optimizer.zero_grad()
         output = self.model(state_input, measurement_input, goal_input)
-        criterion = torch.nn.MSELoss(reduction="sum")
+        criterion = torch.nn.MSELoss(reduction="sum") # ATTENTION, pas de mean sous peine de non apprentissage
         loss = criterion(output, f_target)
         loss.backward()
         optimizer.step()

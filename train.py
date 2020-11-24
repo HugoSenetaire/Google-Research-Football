@@ -11,8 +11,6 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
     sensory = utils.frame_data_to_tensor(frame_data, channel_names, image_size)
     measurements = utils.frame_data_to_measurements(observation[0], measurement_names)
 
-    if use_cuda:
-        sensory, measurements, goal = sensory.cuda(), measurements.cuda(), goal.cuda()
       
     action_dfp = agent.get_action(sensory, measurements, goal, goal, epsilon)
     observation= env.step([[action_dfp],action_op])
