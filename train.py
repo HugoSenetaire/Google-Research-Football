@@ -11,7 +11,7 @@ def env_step(env, agent, observation, action_op, goal, channel_names, image_size
     sensory = utils.frame_data_to_tensor(frame_data, channel_names, image_size)
     measurements = utils.frame_data_to_measurements(observation[0], measurement_names)
 
-      
+    
     action_dfp = agent.get_action(sensory, measurements, goal, goal, epsilon)
     observation= env.step([[action_dfp],action_op])
 
@@ -130,7 +130,7 @@ def train(dfp_agent, env, eval_env, optimizer, scheduler, args, list_opposition)
     mean_loss = np.mean(loss_queue)
     print("STEP TOTAL",t_train * dfp_agent.timestep_per_train + dfp_agent.observe , "TIME TRAINED", t_train, "/ GAME", GAME, "/ STATE", state, \
           "/ EPSILON", dfp_agent.epsilon, "/ REWARD", r_t, \
-          "/ goal", max_score, "/ LOSS", mean_loss)
+          "/ goal", max_score, "/ LOSS", mean_loss, "/ EARNING RATE (moneymoney)", scheduler.get_lr()[0] )
     
 
   
